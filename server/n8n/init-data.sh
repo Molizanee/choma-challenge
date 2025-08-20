@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-# Create user and database for n8n if they don't exist
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     DO \$\$
     BEGIN

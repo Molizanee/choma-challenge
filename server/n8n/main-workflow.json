@@ -1,0 +1,324 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution-api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bb7f5a34-7093-442b-9bc8-c246601b5078",
+      "name": "Webhook",
+      "webhookId": "a76ae689-9e96-48ca-817e-63a1da71d243"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Transform this message into a complete json object, also calculating the date of the task, like if the task is for 10am and the message sent is from 11am, so the task due_date will be tomorrow at 10am, follow this logic:\n\n{{ $json.toJsonString() }}\n\nI need these fields:\n\ntitle: message resumed\nuser_id: {{$('Check if phone number is linked').item.json.user_id}},\ndescription: Complete message with the identification that was sent by whatsapp using number {{ $json.senderPhoneNumber }}\npriority: understand the task level (1: high, 2: medium, 3: easy)",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        144
+      ],
+      "id": "631774e8-fe5c-426b-b2ad-cc42d986b501",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        816,
+        336
+      ],
+      "id": "ed81b238-5738-4f44-b5d6-67423c51643f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "tDrDPBdU83dBm0bI",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "auth",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "3e1717a9-0d3c-4e3b-a8e0-ab5c10673ead"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "auth"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7ae6d7a3-056a-4454-816d-231d83423255",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "message"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "df61d4b3-3b1c-4b85-8fcb-f0ff754c86cb",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/phone-status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "3210306d0780926b1349d3552383899dc50bc6aff68e3d8c26305bf06585373011"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "senderPhoneNumber",
+              "value": "={{ $json.body.sender.split(\"@\")[0] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "9bd24923-146f-491b-be7c-7e84b166aa57",
+      "name": "Check if phone number is linked"
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date()\nconst message = $('Webhook').first().json.body.data.message.conversation\nconst senderPhoneNumber = $input.first().json.phone_number\nconst linked = $input.first().json.is_linked\n\nif (message.includes(\"#auth\") && !linked) {\n  return [{\n    date: now,\n    type: \"auth\",\n    message: message.split(\" \")[1], \n    senderPhoneNumber, \n  }]\n}\n\nif (message.includes(\"#todo\") && linked) {\n  return [{\n    date: now,\n    type: \"message\",\n    message, \n    senderPhoneNumber, \n  }]\n}\n\nreturn [{}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "78011547-2143-48f1-8997-e743b6e47a83",
+      "name": "Verify message type"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/webhook/evolution-api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "3210306d0780926b1349d3552383899dc50bc6aff68e3d8c26305bf06585373011"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.toJsonString() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        -112
+      ],
+      "id": "1fc8ba77-bb47-467d-90f4-e7339387529b",
+      "name": "Link phone with auth code"
+    },
+    {
+      "parameters": {
+        "jsCode": "const itemJson = $input.first().json;\n\nconst nestedString = itemJson.output;\n\nconst cleanJsonString = nestedString.replace(/^```json\\s*|\\s*```$/g, '').trim();\n\nconst finalObject = JSON.parse(cleanJsonString);\n\nreturn [{\n  json: {\n    task: finalObject\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        144
+      ],
+      "id": "edaa798f-47e6-4257-9072-265b3f06dd22",
+      "name": "Parse to json object"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/todos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "3210306d0780926b1349d3552383899dc50bc6aff68e3d8c26305bf06585373011"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.task.toJsonString() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1376,
+        144
+      ],
+      "id": "799356d7-cc02-4ae3-9530-a588e3cd9e2d",
+      "name": "Create todo"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check if phone number is linked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse to json object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Link phone with auth code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if phone number is linked": {
+      "main": [
+        [
+          {
+            "node": "Verify message type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify message type": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse to json object": {
+      "main": [
+        [
+          {
+            "node": "Create todo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea1862eeeb031c97488717242c26ea465c6310eef6d61df6395ea04f35f14df4"
+  }
+}

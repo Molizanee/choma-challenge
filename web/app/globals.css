@@ -134,7 +134,6 @@
     animation-delay: 4s;
   }
 
-  /* Custom prose styles for markdown */
   .prose {
     color: inherit;
     max-width: none;
@@ -192,7 +191,6 @@
     border-left-color: rgb(55 65 81);
   }
 
-  /* Markdown editor styling */
   .w-md-editor {
     background-color: transparent !important;
   }
@@ -216,7 +214,6 @@
     border-bottom: 1px solid rgba(55, 65, 81, 0.3) !important;
   }
 
-  /* Markdown editor preview mode styling */
   .w-md-editor-preview {
     background-color: rgba(255, 255, 255, 0.5) !important;
     border-radius: 0.375rem !important;
@@ -227,7 +224,6 @@
     background-color: rgba(17, 24, 39, 0.5) !important;
   }
 
-  /* Apply prose styles to markdown preview */
   .w-md-editor-preview .wmde-markdown {
     color: inherit;
     font-size: 0.875rem;
