@@ -1,324 +1,214 @@
-# Choma Challenge - AI-Powered WhatsApp Todo Manager
+# Choma Challenge
 
-A sophisticated todo management system that integrates **WhatsApp messaging** with **AI-powered task processing** through Evolution API, N8N workflows, and a modern Next.js web application.
+A todo management system with WhatsApp integration. Users can manage tasks through a web interface and create todos by sending WhatsApp messages that are processed by AI.
 
-## 🎯 Project Overview
+## Architecture
 
-This project demonstrates a complete full-stack solution that allows users to manage their todos through multiple interfaces:
-- **Web Application**: Modern React/Next.js interface with real-time updates
-- **WhatsApp Integration**: Send todos directly via WhatsApp messages using natural language
-- **AI Processing**: Google Gemini AI automatically processes WhatsApp messages to create structured todos
-- **Workflow Automation**: N8N orchestrates the entire message processing pipeline
+The system consists of four main components:
+- **Next.js Web Application**: Frontend interface for todo management
+- **Supabase**: Cloud database service providing PostgreSQL database and real-time subscriptions
+- **Server Infrastructure**: Docker services including N8N, Evolution API, and local PostgreSQL
+- **AI Integration**: Google Gemini processes WhatsApp messages to create structured todos
 
-## 🏗️ System Architecture
+## Server Setup
 
+The server runs three Docker services that work together:
+
+### Prerequisites
+- Docker and Docker Compose installed
+
+### Starting the Server
+
+1. Navigate to the server directory:
+```bash
+cd server
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   WhatsApp      │────│  Evolution API   │────│   N8N Workflow  │
-│   Messages      │    │  (Webhook)       │    │   (AI Process)  │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                                        │
-                                                        ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Next.js       │────│   API Routes     │────│   Supabase      │
-│   Frontend      │    │   (Backend)      │    │   Database      │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+
+2. Start all services:
+```bash
+docker-compose up -d
 ```
 
-## 🛠️ Technology Stack
+3. Verify services are running:
+```bash
+docker-compose ps
+```
 
-### Frontend
-- **Next.js 15** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **Radix UI** - Accessible component primitives
-- **React Markdown** - Rich text rendering for todo descriptions
+### Services
 
-### Backend & Infrastructure
-- **Supabase** - Database and authentication
-- **Evolution API** - WhatsApp Business API integration
-- **N8N** - Workflow automation and AI processing
-- **Google Gemini AI** - Natural language processing
-- **Docker** - Containerization
-- **Google Cloud Platform** - Production deployment
+| Service | Port | Description |
+|---------|------|-------------|
+| PostgreSQL | 5432 (internal) | Shared database for N8N and Evolution API |
+| N8N | 5678 | Workflow automation platform |
+| Evolution API | 8080 | WhatsApp Business API integration |
+
+Access URLs:
+- N8N: http://localhost:5678
+- Evolution API: http://localhost:8080
+
+### Environment Configuration
+
+Configure these variables in the server `.env` file:
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`: Database credentials
+- `EVOLUTION_API_KEY`: API key for Evolution API authentication
+- `N8N_HOST`: N8N host configuration
+- `WEBHOOK_URL`: Webhook URL for N8N workflows
+
+## Web Application
+
+The Next.js frontend provides a modern interface for todo management with real-time updates.
+
+### Technology Stack
+- Next.js 15 with App Router
+- TypeScript
+- Tailwind CSS
+- Radix UI components
+- Supabase for database and real-time subscriptions
+
+### Setup
+
+1. Navigate to the web directory:
+```bash
+cd web
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Configure environment variables in `.env.local`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+```
+
+4. Set up Supabase database schema:
+   - Create the `todos` and `phone_link` tables (see schema below)
+   - Enable real-time subscriptions for the `todos` table
+   - Configure Row Level Security policies if needed
+
+5. Start the development server:
+```bash
+npm run dev
+```
+
+The application will be available at http://localhost:3000
+
+### Features
+- Create, update, delete, and complete todos
+- Priority levels (High, Medium, Low)
+- Due date management
+- Markdown support for descriptions
+- Real-time updates across devices
+- WhatsApp phone number linking
+
+## Supabase Integration
+
+The web application uses Supabase as its primary database and backend service. Supabase provides:
 
 ### Database
-- **PostgreSQL** (via Supabase)
-- **Real-time subscriptions** for live updates
+- **PostgreSQL Database**: Hosted cloud database for storing todos and phone links
+- **Real-time Subscriptions**: Live updates when todos are created, updated, or deleted
+- **Row Level Security**: Built-in security policies for data protection
+- **Auto-generated API**: RESTful API endpoints for database operations
 
-## 📊 Database Schema
+### Setup Requirements
+1. Create a Supabase project at https://supabase.com
+2. Set up the database schema using the tables below
+3. Configure environment variables with your Supabase credentials
+4. Enable real-time subscriptions for the `todos` table
 
-| Table | Description | Key Fields |
-|-------|-------------|------------|
-| **`todos`** | Main todo items with full task management | `id`, `title`, `description`, `due_date`, `priority`, `is_complete`, `user_id` |
-| **`phone_link`** | Links WhatsApp phone numbers to user accounts | `id`, `phone_number_linked`, `auth_code`, `user_id`, `is_active` |
+### Real-time Features
+The application automatically updates the UI when:
+- New todos are created (including via WhatsApp)
+- Existing todos are modified
+- Todos are completed or deleted
+- Phone numbers are linked or unlinked
 
-### Detailed Schema
+This ensures all connected devices stay synchronized without manual refresh.
 
-```sql
--- Todos table for task management
-CREATE TABLE public.todos (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  deleted_at timestamp with time zone,
-  is_deleted boolean DEFAULT false,
-  title text,
-  description text,
-  due_date timestamp with time zone,
-  priority smallint DEFAULT '3'::smallint,  -- 1: high, 2: medium, 3: low
-  is_complete boolean DEFAULT false,
-  user_id uuid,
-  CONSTRAINT todos_pkey PRIMARY KEY (id),
-  CONSTRAINT todos_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
-);
+## Supabase Database Schema
 
--- Phone linking for WhatsApp integration
-CREATE TABLE public.phone_link (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  is_active boolean,
-  auth_code integer,                        -- 8-digit authentication code
-  phone_number_linked text,                 -- WhatsApp phone number
-  user_id uuid DEFAULT gen_random_uuid(),
-  is_deleted boolean DEFAULT false,
-  deleted_at timestamp with time zone,
-  CONSTRAINT phone_link_pkey PRIMARY KEY (id),
-  CONSTRAINT phone_link_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
-);
-```
+| Table | Column | Type | Description |
+|-------|--------|------|-------------|
+| **todos** | id | uuid | Primary key |
+| | created_at | timestamp | Creation date |
+| | title | text | Todo title |
+| | description | text | Todo description (supports markdown) |
+| | due_date | timestamp | Due date |
+| | priority | smallint | Priority level (1=high, 2=medium, 3=low) |
+| | is_complete | boolean | Completion status |
+| | is_deleted | boolean | Soft delete flag |
+| | deleted_at | timestamp | Deletion timestamp |
+| | user_id | uuid | Foreign key to auth.users |
+| **phone_link** | id | uuid | Primary key |
+| | created_at | timestamp | Creation date |
+| | phone_number_linked | text | WhatsApp phone number |
+| | auth_code | integer | 8-digit authentication code |
+| | is_active | boolean | Link status |
+| | is_deleted | boolean | Soft delete flag |
+| | deleted_at | timestamp | Deletion timestamp |
+| | user_id | uuid | Foreign key to auth.users |
 
-## 🔗 API Endpoints
+## WhatsApp Integration
 
-### Todo Management
-| Endpoint | Method | Description | Auth Required |
-|----------|--------|-------------|---------------|
-| `/api/todos` | GET | Fetch user todos (with optional filtering) | ❌ |
-| `/api/todos` | POST | Create new todo | ❌ |
-| `/api/todos/[id]` | PUT | Update existing todo | ❌ |
-| `/api/todos/[id]` | DELETE | Soft delete todo | ❌ |
+Users can create todos by sending WhatsApp messages using these formats:
 
-### WhatsApp Integration
-| Endpoint | Method | Description | Auth Required |
-|----------|--------|-------------|---------------|
-| `/api/whatsapp-auth` | POST | Link WhatsApp number with auth code | ❌ |
-| `/api/phone-status` | POST | Check if phone number is linked | ✅ API Key |
-| `/api/phone-lookup` | POST | Get user info for linked phone | ❌ |
-| `/api/phone-unlink` | POST | Unlink phone from account | ❌ |
-| `/api/auth-code` | POST | Generate authentication code | ❌ |
-
-### Webhook & Integration
-| Endpoint | Method | Description | Auth Required |
-|----------|--------|-------------|---------------|
-| `/api/webhook/evolution-api` | POST | Main webhook for WhatsApp messages | ✅ API Key |
-| `/api/webhook/evolution-api-secure` | POST | Secure webhook with enhanced validation | ✅ API Key |
-| `/api/cleanup-expired-codes` | POST | Clean up expired auth codes | ✅ API Key |
-
-## 🤖 N8N Workflow Automation
-
-The N8N workflow orchestrates the entire WhatsApp message processing pipeline:
-
-### Workflow Steps
-
-1. **Webhook Trigger** - Receives WhatsApp messages from Evolution API
-2. **Phone Status Check** - Verifies if sender's phone is linked to an account
-3. **Message Type Detection** - Determines if message is authentication or todo creation
-4. **Authentication Flow** - Links phone numbers using 8-digit codes
-5. **AI Processing** - Google Gemini AI extracts todo information from natural language
-6. **Todo Creation** - Structured todo data is sent to the web app API
-
-### Message Formats
-
-**Authentication**: 
+**Link phone number:**
 ```
 #auth 12345678
 ```
 
-**Todo Creation**:
+**Create todos:**
 ```
-#todo Meeting with client tomorrow at 10am about project proposal
-#todo Buy groceries this evening - milk, bread, eggs
+#todo Meeting with client tomorrow at 10am
+#todo Buy groceries this evening
 #todo High priority: Submit report by Friday
 ```
 
-### AI Processing Features
+The N8N workflow processes these messages, extracts todo information using Google Gemini AI, and creates structured todos in the database.
 
-- **Natural Language Understanding**: Converts messages into structured todo data
-- **Smart Date Recognition**: Interprets relative dates ("tomorrow", "next Friday")
-- **Priority Detection**: Analyzes message content to assign priority levels
-- **Context Preservation**: Maintains sender information and timestamps
+## API Endpoints
 
-## 🌐 Web Application Features
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/todos` | GET | Fetch todos |
+| `/api/todos` | POST | Create todo |
+| `/api/todos/[id]` | PUT | Update todo |
+| `/api/todos/[id]` | DELETE | Delete todo |
+| `/api/whatsapp-auth` | POST | Link WhatsApp number |
+| `/api/phone-status` | POST | Check phone link status |
+| `/api/phone-unlink` | POST | Unlink phone |
+| `/api/auth-code` | POST | Generate auth code |
+| `/api/webhook/evolution-api` | POST | WhatsApp webhook |
 
-### User Interface
-- **Modern Design**: Clean, responsive interface built with Tailwind CSS
-- **Real-time Updates**: Live todo synchronization using Supabase subscriptions
-- **Rich Text Editor**: Markdown support for detailed todo descriptions
-- **Mobile Responsive**: Optimized for all device sizes
+## Quick Start
 
-### Todo Management
-- **CRUD Operations**: Create, read, update, delete todos
-- **Priority System**: Visual priority indicators (High, Medium, Low)
-- **Due Date Management**: Calendar integration and overdue indicators
-- **Completion Tracking**: Mark todos as complete with progress visualization
-- **Search & Filter**: Find todos by title, description, or status
-
-### WhatsApp Integration
-- **Phone Linking**: Secure authentication process with generated codes
-- **Status Dashboard**: View linked WhatsApp numbers and connection status
-- **Message History**: Track todos created via WhatsApp
-
-## 🚀 Deployment & Infrastructure
-
-### Local Development
+1. Clone the repository:
 ```bash
-# Frontend
-cd web
-npm install
-npm run dev
+git clone <repository-url>
+cd choma-challenge
+```
 
-# Backend Services
+2. Set up Supabase:
+   - Create a new project at https://supabase.com
+   - Create the database tables using the schema above
+   - Copy your project URL and API keys
+
+3. Start the server:
+```bash
 cd server
 docker-compose up -d
 ```
 
-### Production Deployment (Google Cloud Platform)
-
-The project includes comprehensive GCP deployment automation:
-
-- **Cloud Run**: Containerized microservices deployment
-- **Cloud SQL**: Managed PostgreSQL database
-- **Memorystore**: Redis caching layer
-- **Container Registry**: Docker image storage
-- **Load Balancing**: Automatic traffic distribution
-
+4. Configure and start the web application:
 ```bash
-cd server/gcp-deployment
-chmod +x deploy-enhanced.sh
-./deploy-enhanced.sh
+cd web
+npm install
+# Configure .env.local with your Supabase credentials
+npm run dev
 ```
 
-### Environment Configuration
-
-**Frontend (Next.js)**:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
-**Backend Services**:
-```env
-DATABASE_URL=postgresql://user:pass@host:port/db
-EVOLUTION_API_KEY=your-evolution-api-key
-N8N_ENCRYPTION_KEY=your-encryption-key
-WEBHOOK_URL=your-webhook-endpoint
-```
-
-## 🔐 Security Features
-
-### API Security
-- **API Key Authentication**: Secure webhook endpoints
-- **Rate Limiting**: Prevents abuse and DDoS attacks
-- **IP Whitelisting**: Restrict access to trusted sources
-- **Input Validation**: Comprehensive request sanitization
-
-### Data Protection
-- **Encrypted Communication**: HTTPS/TLS for all endpoints
-- **Secure Token Storage**: JWT tokens with proper expiration
-- **Database Security**: Row-level security policies
-- **Audit Logging**: Track all data modifications
-
-### WhatsApp Integration Security
-- **Authentication Codes**: Time-limited 8-digit codes
-- **Phone Verification**: Multi-step verification process
-- **Session Management**: Secure phone-to-account linking
-
-## 📈 Performance & Scalability
-
-### Optimization Features
-- **Database Indexing**: Optimized queries for large datasets
-- **Caching Strategy**: Redis caching for frequently accessed data
-- **Image Optimization**: Next.js automatic image optimization
-- **Code Splitting**: Lazy loading for optimal bundle sizes
-
-### Monitoring & Analytics
-- **Error Tracking**: Comprehensive error logging and alerting
-- **Performance Metrics**: Response time and throughput monitoring
-- **Usage Analytics**: User interaction and feature adoption tracking
-- **Health Checks**: Automated service availability monitoring
-
-## 🧪 Testing Strategy
-
-### Test Coverage
-- **Unit Tests**: Individual component and function testing
-- **Integration Tests**: API endpoint and workflow testing
-- **E2E Tests**: Complete user journey validation
-- **Load Testing**: Performance under various traffic conditions
-
-### Quality Assurance
-- **TypeScript**: Compile-time type checking
-- **ESLint**: Code quality and consistency enforcement
-- **Prettier**: Automated code formatting
-- **Husky**: Pre-commit hooks for quality gates
-
-## 🎨 Design Principles
-
-### User Experience
-- **Intuitive Interface**: Clear navigation and consistent design patterns
-- **Accessibility**: WCAG 2.1 compliance with keyboard navigation
-- **Progressive Enhancement**: Works without JavaScript enabled
-- **Offline Support**: Service worker for basic offline functionality
-
-### Code Quality
-- **SOLID Principles**: Maintainable and extensible architecture
-- **DRY**: Reusable components and utilities
-- **Separation of Concerns**: Clear boundaries between layers
-- **Documentation**: Comprehensive inline and external documentation
-
-## 🚦 Getting Started
-
-### Prerequisites
-- Node.js 18+ and npm/yarn
-- Docker and Docker Compose
-- Supabase account
-- Google Cloud Platform account (for production)
-- WhatsApp Business Account for Evolution API
-
-### Quick Setup
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/choma-challenge
-   cd choma-challenge
-   ```
-
-2. **Set up the web application**
-   ```bash
-   cd web
-   npm install
-   cp .env.example .env.local
-   # Configure your environment variables
-   npm run dev
-   ```
-
-3. **Deploy backend services**
-   ```bash
-   cd server
-   docker-compose up -d
-   ```
-
-4. **Access the application**
-   - Web App: http://localhost:3000
-   - N8N: http://localhost:5678
-   - Evolution API: http://localhost:8080
-
-## 📞 Support & Contact
-
-For questions about this project or to discuss development opportunities:
-
-- **GitHub**: [Your GitHub Profile]
-- **LinkedIn**: [Your LinkedIn Profile]
-- **Email**: [Your Email]
-
----
-
-*This project showcases modern full-stack development practices, AI integration, and scalable cloud architecture. It demonstrates proficiency in React, Node.js, AI/ML integration, DevOps, and enterprise-grade application development.*
+5. Access the application at http://localhost:3000
