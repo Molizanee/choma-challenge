@@ -1,9 +1,8 @@
-version: '3.9'
-
 volumes:
   db_storage:
   n8n_storage:
   evolution_instances:
+  evolution_logs:
   redis_data:
 
 services:
@@ -63,29 +62,23 @@ services:
       - app-network
 
   evolution-api:
+    build:
+      context: ./evolution-api
+      dockerfile: Dockerfile
     container_name: evolution_api
-    image: atendai/evolution-api:v2.1.1
     restart: always
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-mude-me}
-      - DATABASE_PROVIDER=${DATABASE_PROVIDER:-postgresql}
-      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_NON_ROOT_USER:-n8n}:${POSTGRES_NON_ROOT_PASSWORD:-n8n}@postgres:5432/${POSTGRES_DB:-n8n}
-      - DATABASE_CONNECTION_CLIENT_NAME=${DATABASE_CONNECTION_CLIENT_NAME:-evolution}
-      - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://redis:6379
-      - CACHE_REDIS_PREFIX_KEY=evolution
-      - CACHE_LOCAL_ENABLED=false
-      - CONFIG_SESSION_PHONE_VERSION=${CONFIG_SESSION_PHONE_VERSION:-2.3000.1015901307}
-      - CONFIG_SESSION_PHONE_CLIENT=${CONFIG_SESSION_PHONE_CLIENT:-Android}
-      - CONFIG_SESSION_PHONE_NAME=${CONFIG_SESSION_PHONE_NAME:-Edge}
-      - LOG_LEVEL=${LOG_LEVEL:-ERROR}
-      - SERVER_TYPE=${SERVER_TYPE:-http}
-      - DEL_INSTANCE=false
-      - QRCODE_LIMIT=${QRCODE_LIMIT:-30}
+      # Override specific database and cache settings for Docker networking
+      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_NON_ROOT_USER:-n8n}:${POSTGRES_NON_ROOT_PASSWORD:-n8n}@postgres:5432/${POSTGRES_DB:-n8n}?schema=evolution_api
+      - CACHE_REDIS_URI=redis://redis:6379/6
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
     volumes:
       - evolution_instances:/evolution/instances
+      - evolution_logs:/evolution/logs
     depends_on:
       postgres:
         condition: service_healthy

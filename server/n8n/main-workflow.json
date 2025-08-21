@@ -9,10 +9,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -1104,
+        112
       ],
-      "id": "bb7f5a34-7093-442b-9bc8-c246601b5078",
+      "id": "dbe59b29-63fc-48f0-b778-c879341d42bd",
       "name": "Webhook",
       "webhookId": "a76ae689-9e96-48ca-817e-63a1da71d243"
     },
@@ -25,10 +25,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        880,
-        144
+        -192,
+        256
       ],
-      "id": "631774e8-fe5c-426b-b2ad-cc42d986b501",
+      "id": "02bfecca-dc3a-4d0c-8226-0d7fc5577d3c",
       "name": "AI Agent"
     },
     {
@@ -38,14 +38,14 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        816,
-        336
+        -256,
+        448
       ],
-      "id": "ed81b238-5738-4f44-b5d6-67423c51643f",
+      "id": "414bf4c9-5b86-4e63-98cf-4441744b9173",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "tDrDPBdU83dBm0bI",
+          "id": "bhQeFijywqfTGeAj",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -110,16 +110,16 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        624,
-        0
+        -448,
+        112
       ],
-      "id": "df61d4b3-3b1c-4b85-8fcb-f0ff754c86cb",
+      "id": "7fa50f26-91e7-4e54-a9d5-2a9cc6f039dc",
       "name": "Switch"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:3000/api/phone-status",
+        "url": "https://choma-web-app.vercel.app/api/phone-status",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -143,10 +143,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        208,
-        0
+        -864,
+        112
       ],
-      "id": "9bd24923-146f-491b-be7c-7e84b166aa57",
+      "id": "6768c6a3-b0e0-4744-a317-c730fe7c7e66",
       "name": "Check if phone number is linked"
     },
     {
@@ -156,16 +156,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        416,
-        0
+        -656,
+        112
       ],
-      "id": "78011547-2143-48f1-8997-e743b6e47a83",
+      "id": "11fc803d-8765-466e-a90b-a09cdbfecd1e",
       "name": "Verify message type"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:3000/api/webhook/evolution-api",
+        "url": "https://choma-web-app.vercel.app/api/webhook/evolution-api",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -183,10 +183,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        880,
-        -112
+        -192,
+        0
       ],
-      "id": "1fc8ba77-bb47-467d-90f4-e7339387529b",
+      "id": "ebda2607-cb65-42ea-9886-51d20b6c5ea2",
       "name": "Link phone with auth code"
     },
     {
@@ -196,16 +196,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1184,
-        144
+        112,
+        256
       ],
-      "id": "edaa798f-47e6-4257-9072-265b3f06dd22",
+      "id": "57c7e3a3-da9c-4eb5-a204-93f017052290",
       "name": "Parse to json object"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:3000/api/todos",
+        "url": "https://choma-web-app.vercel.app/api/todos",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -223,11 +223,73 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1376,
-        144
+        304,
+        256
       ],
-      "id": "799356d7-cc02-4ae3-9530-a588e3cd9e2d",
+      "id": "551b69c1-cfa3-4ea7-9fd2-be7b0d7637fd",
       "name": "Create todo"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://instance-20250821-130423.tamarin-tyrannosaurus.ts.net/message/sendText/{{ $('Webhook').item.json.body.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "d5c7e5ec2decf03fffddfe6c92ce9700b67e868358ee7abc7ff9b88e9f245a0c"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{$('Webhook').item.json.body.sender}}\",\n  \"text\": \"hey\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16,
+        0
+      ],
+      "id": "854d2369-e289-4b1c-9c53-32ff0a347b2e",
+      "name": "Send Auth Confirmation Message"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        -80
+      ],
+      "id": "c8bf88ca-6ecc-4821-b57b-3e29dbf18a7a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:8080/instance/fetchInstances",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "d5c7e5ec2decf03fffddfe6c92ce9700b67e868358ee7abc7ff9b88e9f245a0c"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -416,
+        -96
+      ],
+      "id": "e3945e3c-7005-4d66-94f7-2d492bbf0a44",
+      "name": "HTTP Request",
+      "alwaysOutputData": true
     }
   ],
   "connections": {
@@ -304,6 +366,17 @@
         ]
       ]
     },
+    "Link phone with auth code": {
+      "main": [
+        [
+          {
+            "node": "Send Auth Confirmation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Parse to json object": {
       "main": [
         [
@@ -314,11 +387,66 @@
           }
         ]
       ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "pinData": {},
+  "pinData": {
+    "Webhook": [
+      {
+        "headers": {
+          "host": "instance-20250821-130423.tamarin-tyrannosaurus.ts.net:8443",
+          "user-agent": "axios/1.7.7",
+          "content-length": "609",
+          "accept-encoding": "gzip, compress, deflate, br",
+          "content-type": "application/json",
+          "tailscale-funnel-request": "?1",
+          "x-forwarded-for": "146.70.98.165",
+          "x-forwarded-host": "instance-20250821-130423.tamarin-tyrannosaurus.ts.net:8443",
+          "x-forwarded-proto": "https"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "event": "messages.upsert",
+          "instance": "choma-tasks",
+          "data": {
+            "key": {
+              "remoteJid": "5511948332094@s.whatsapp.net",
+              "fromMe": true,
+              "id": "3A0FDCA0BEB26C93BAA8"
+            },
+            "pushName": "David Molizane",
+            "message": {
+              "conversation": "hey"
+            },
+            "messageType": "conversation",
+            "messageTimestamp": 1755785558,
+            "instanceId": "3267dfd3-0bbb-46bb-869e-5a58ce0f99d7",
+            "source": "ios"
+          },
+          "destination": "https://instance-20250821-130423.tamarin-tyrannosaurus.ts.net:8443/webhook/evolution-api",
+          "date_time": "2025-08-21T11:12:38.484Z",
+          "sender": "5511948332094@s.whatsapp.net",
+          "server_url": "http://localhost:8080",
+          "apikey": "7978F0503C8C-4914-940C-98A8EA8B1E54"
+        },
+        "webhookUrl": "http://localhost:5678/webhook/evolution-api",
+        "executionMode": "production"
+      }
+    ]
+  },
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "ea1862eeeb031c97488717242c26ea465c6310eef6d61df6395ea04f35f14df4"
+    "instanceId": "8df406030b5e31ee01ba7d68ec8c4b6dbe850ed2499edefd2a470beace775f9a"
   }
 }
