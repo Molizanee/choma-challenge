@@ -62,9 +62,7 @@ services:
       - app-network
 
   evolution-api:
-    build:
-      context: ./evolution-api
-      dockerfile: Dockerfile
+    image: atendai/evolution-api:v2.1.1
     container_name: evolution_api
     restart: always
     ports:
