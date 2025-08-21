@@ -9,21 +9,16 @@ const supabaseAdmin = createClient(
 
 type TodoUpdate = Database['public']['Tables']['todos']['Update'];
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 export async function GET(
   request: NextRequest,
-  { params }: RouteParams
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { data: todo, error } = await supabaseAdmin
       .from('todos')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('is_deleted', false)
       .single();
 
@@ -51,8 +46,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: RouteParams
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await request.json();
 
@@ -68,7 +64,7 @@ export async function PUT(
     const { data: todo, error } = await supabaseAdmin
       .from('todos')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('is_deleted', false)
       .select()
       .single();
@@ -97,8 +93,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: RouteParams
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { data: todo, error } = await supabaseAdmin
       .from('todos')
@@ -106,7 +103,7 @@ export async function DELETE(
         is_deleted: true,
         deleted_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('is_deleted', false)
       .select()
       .single();
