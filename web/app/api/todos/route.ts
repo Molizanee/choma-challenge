@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/lib/database.types';
+import { verifyApiKey } from '@/lib/auth-middleware';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +13,15 @@ type TodoRow = Database['public']['Tables']['todos']['Row'];
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify API key
+    const authResult = verifyApiKey(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: authResult.error },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
 
@@ -45,6 +55,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify API key
+    const authResult = verifyApiKey(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: authResult.error },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     
     if (!body.title) {

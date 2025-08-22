@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyApiKey } from '@/lib/auth-middleware'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,15 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify API key
+    const authResult = verifyApiKey(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: authResult.error },
+        { status: 401 }
+      );
+    }
+
     const { phone_number } = await request.json()
     
     if (!phone_number) {

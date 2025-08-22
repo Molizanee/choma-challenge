@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/lib/database.types';
+import { verifyApiKey } from '@/lib/auth-middleware';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,6 +16,15 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
+    // Verify API key
+    const authResult = verifyApiKey(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: authResult.error },
+        { status: 401 }
+      );
+    }
+
     const { data: todo, error } = await supabaseAdmin
       .from('todos')
       .select('*')
@@ -50,6 +60,15 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
+    // Verify API key
+    const authResult = verifyApiKey(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: authResult.error },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     const updateData: TodoUpdate = {
@@ -97,6 +116,15 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
+    // Verify API key
+    const authResult = verifyApiKey(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: authResult.error },
+        { status: 401 }
+      );
+    }
+
     const { data: todo, error } = await supabaseAdmin
       .from('todos')
       .update({
