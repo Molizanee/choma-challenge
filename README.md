@@ -170,6 +170,80 @@ Users can create todos by sending WhatsApp messages using these formats:
 
 The N8N workflow processes these messages, extracts todo information using Google Gemini AI, and creates structured todos in the database.
 
+## N8N Workflow Architecture
+
+The heart of the WhatsApp integration is powered by an intelligent N8N workflow that processes incoming WhatsApp messages and converts them into structured todos using AI.
+
+![N8N Workflow](server/n8n/workflow.png)
+
+### Workflow Overview
+
+The workflow consists of several interconnected nodes that handle two main operations:
+1. **Phone Number Authentication** - Links WhatsApp numbers to user accounts
+2. **Todo Creation** - Processes WhatsApp messages and creates structured todos with AI assistance
+
+### Workflow Steps
+
+#### 1. **Webhook Trigger**
+- Receives incoming WhatsApp messages from Evolution API
+- Acts as the entry point for all WhatsApp communications
+- Endpoint: `/evolution-api` (POST)
+
+#### 2. **Phone Number Verification**
+- Checks if the sender's phone number is linked to a user account
+- Makes API call to `/api/phone-status` endpoint
+- Returns user information and link status
+
+#### 3. **Message Type Classification**
+- Analyzes the incoming message content
+- Determines if it's an authentication request (`#auth`) or todo creation (`#todo`)
+- Routes the message to the appropriate processing branch
+
+#### 4. **Authentication Flow** (for `#auth` messages)
+- Processes authentication codes from unlinked phone numbers
+- Links the phone number to a user account via `/api/webhook/evolution-api`
+- Sends a welcome message confirming successful authentication
+
+#### 5. **Todo Creation Flow** (for `#todo` messages)
+- **AI Processing**: Uses Google Gemini to analyze the message content
+- **Intelligent Parsing**: Extracts task details, priority, due dates, and context
+- **Content Enhancement**: Generates helpful guides and step-by-step suggestions
+- **Database Creation**: Creates the structured todo via `/api/todos` endpoint
+- **Confirmation**: Sends success message back to WhatsApp
+
+### AI-Powered Todo Processing
+
+The workflow leverages Google Gemini AI to transform unstructured WhatsApp messages into rich, actionable todos. The AI agent:
+
+- **Analyzes Message Content**: Extracts the core task from natural language
+- **Determines Priority**: Identifies urgency keywords (urgent, ASAP, critical, etc.)
+- **Extracts Due Dates**: Converts relative time expressions ("tomorrow at 10am") to ISO timestamps
+- **Generates Helpful Content**: Creates step-by-step guides and resource links
+- **Supports Multiple Languages**: Works with both English and Portuguese messages
+- **Preserves Context**: Maintains original message content and sender information
+
+### AI Prompt Engineering
+
+The workflow uses a sophisticated prompt (detailed in [`server/n8n/prompt.md`](server/n8n/prompt.md)) that instructs the AI to:
+
+- Parse unstructured text into structured JSON
+- Generate actionable step-by-step guides
+- Provide relevant resource links
+- Detect and respect message language
+- Extract temporal information and priority indicators
+- Create rich Markdown descriptions with helpful metadata
+
+### Workflow Configuration
+
+Key features of the workflow:
+- **Error Handling**: Robust message validation and routing
+- **Security**: API key authentication for all external calls
+- **Scalability**: Asynchronous processing of messages
+- **Reliability**: Confirmation messages for successful operations
+- **Intelligence**: Context-aware AI processing with Google Gemini
+
+The complete workflow definition is available in [`server/n8n/main-workflow.json`](server/n8n/main-workflow.json), which can be imported directly into your N8N instance for customization or deployment.
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
